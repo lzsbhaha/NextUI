@@ -59,10 +59,15 @@ LDFLAGS += `pkg-config --libs libzip` -lz
 else
 LDFLAGS += -lzip -lz
 endif # Linux
-else # all handheld platforms
+else # all handheld platfoms
+ifeq ($(PLATFORM), my355)
+LDFLAGS	 +=  -Llibretro-common -lsrm -lzip -lz
+CFLAGS   += -DHAS_SRM
+else
 LDFLAGS	 +=  -Llibretro-common -lsrm -lzip -lz
 CFLAGS   += -DHAS_SRM
 LDFLAGS +=  -lasound
+endif
 endif
 
 # RA support: rcheevos and libchdr linking
@@ -98,11 +103,10 @@ ifeq ($(PLATFORM), desktop)
 all: clean libretro-common rcheevos libchdr $(PREFIX_LOCAL)/include/msettings.h
 	mkdir -p build/$(PLATFORM)
 	$(CC) $(SOURCE) -o $(PRODUCT) $(CFLAGS) $(LDFLAGS)
-else ifneq (,$(filter $(PLATFORM),tg5040 tg5050 my355))
-# Platforms with RA support
+else
 all: clean libretro-common libsrm.a rcheevos libchdr $(PREFIX_LOCAL)/include/msettings.h
 	mkdir -p build/$(PLATFORM)
-	cp -L $(PREFIX)/lib/libsamplerate.so.* build/$(PLATFORM)
+	# This is a bandaid fix, needs to be cleaned up if/when we expand to other platforms.
 	cp -L $(PREFIX)/lib/libcrypto.so.* build/$(PLATFORM)
 	chmod a+r build/$(PLATFORM)/libcrypto.so.*
 ifeq ($(PLATFORM), my355)
@@ -149,7 +153,7 @@ $(PREFIX_LOCAL)/include/msettings.h:
 ### libsrm stuff
 OBJECTS = streams/rzip_stream.o streams/file_stream.o vfs/vfs_implementation.o file/file_path.o file/file_path_io.o compat/compat_strl.o time/rtime.o string/stdstring.o encodings/encoding_utf.o streams/trans_stream.o streams/trans_stream_pipe.o streams/trans_stream_zlib.o
 
-$(OBJECTS) : 
+$(OBJECTS) :
 	cd libretro-common && $(CC) $(CFLAGS) -DHAVE_ZLIB -c -o $@ $(subst .o,.c,$@) -I include/
 
 libsrm.a: $(OBJECTS)
